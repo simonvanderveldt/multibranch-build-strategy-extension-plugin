@@ -44,48 +44,44 @@ import jenkins.scm.api.SCMRevision;
 import jenkins.scm.api.SCMSource;
 import jenkins.scm.api.SCMSourceOwner;
 
-public abstract class BranchBuildStrategyExtension extends BranchBuildStrategy{
 
-		private final static int HASH_LENGTH = 40;
-		private static final Logger logger = Logger.getLogger(BranchBuildStrategyExtension.class.getName());
-	
-	   protected SCMFileSystem   buildSCMFileSystem(SCMSource source, SCMHead head, SCMRevision currRevision,SCM scm,SCMSourceOwner owner) throws Exception{
-	    	GitSCMFileSystem.Builder builder = new GitSCMFileSystem.BuilderImpl(); 
-	    	if (currRevision != null && !(currRevision instanceof AbstractGitSCMSource.SCMRevisionImpl))
-	             return builder.build(source, head, new AbstractGitSCMSource.SCMRevisionImpl(head, currRevision.toString().substring(0,40)));
-	         else 
-	             return builder.build(owner, scm, currRevision);
-	    }
-	    
-	    
-	   protected List<GitChangeSet> getGitChangeSetListFromPrevious(SCMFileSystem fileSystem,SCMHead head, SCMRevision prevRevision) throws Exception{
-	        ByteArrayOutputStream out = new ByteArrayOutputStream();
-	        if (prevRevision != null && !(prevRevision instanceof AbstractGitSCMSource.SCMRevisionImpl))
-	            fileSystem.changesSince(new AbstractGitSCMSource.SCMRevisionImpl(head,prevRevision.toString().substring(0,HASH_LENGTH)), out);
-	        else 
-	            fileSystem.changesSince(prevRevision, out);	        
-	        GitChangeLogParser parser = new GitChangeLogParser(true);
-	        return parser.parse(new ByteArrayInputStream(out.toByteArray()));
-	    }
-	    
-	    
-	   protected Set<String> collectAllAffectedFiles(List<GitChangeSet> gitChangeSetList) {
-	    	Set<String> pathesSet = new HashSet<String>();
-	        for (GitChangeSet gitChangeSet : gitChangeSetList) {
-	        	List<Path> affectedFilesList = new ArrayList<Path>(gitChangeSet.getAffectedFiles());
-	        	for (Path path : affectedFilesList) {
-	        		pathesSet.add(path.getPath());
-	        		logger.fine("File:" + path.getPath() +" from commit:" + gitChangeSet.getCommitId() + " Change type:" + path.getEditType().getName());
-	        	}
-	        }
-	        return pathesSet;
-	    }
-	   
-	   protected Set<String> collectAllComments(List<GitChangeSet> gitChangeSetList) {
-	    	Set<String> comments = new HashSet<String>();
-	        for (GitChangeSet gitChangeSet : gitChangeSetList) {
-	        	comments.add(gitChangeSet.getComment());
-	        }
-	        return comments;
-	    }
+public abstract class BranchBuildStrategyExtension extends BranchBuildStrategy {
+  private final static int HASH_LENGTH = 40;
+  private static final Logger logger = Logger.getLogger(BranchBuildStrategyExtension.class.getName());
+
+  protected SCMFileSystem buildSCMFileSystem(SCMSource source, SCMHead head, SCMRevision currRevision, SCM scm, SCMSourceOwner owner) throws Exception {
+    GitSCMFileSystem.Builder builder = new GitSCMFileSystem.BuilderImpl();
+  	if (currRevision != null && !(currRevision instanceof AbstractGitSCMSource.SCMRevisionImpl))
+      return builder.build(source, head, new AbstractGitSCMSource.SCMRevisionImpl(head, currRevision.toString().substring(0,40)));
+    else
+      return builder.build(owner, scm, currRevision);
+  }
+
+  protected List<GitChangeSet> getGitChangeSetListFromPrevious(SCMFileSystem fileSystem, SCMHead head, SCMRevision prevRevision) throws Exception {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    fileSystem.changesSince(prevRevision, out);
+    logger.fine(out.toString("UTF-8"));
+    GitChangeLogParser parser = new GitChangeLogParser(true);
+    return parser.parse(new ByteArrayInputStream(out.toByteArray()));
+  }
+
+  protected Set<String> collectAllAffectedFiles(List<GitChangeSet> gitChangeSetList) {
+  	Set<String> pathsSet = new HashSet<String>();
+    for (GitChangeSet gitChangeSet : gitChangeSetList) {
+    	List<Path> affectedFilesList = new ArrayList<Path>(gitChangeSet.getAffectedFiles());
+    	for (Path path : affectedFilesList) {
+        pathsSet.add(path.getPath());
+        logger.fine("File:" + path.getPath() +" from commit:" + gitChangeSet.getCommitId() + " Change type:" + path.getEditType().getName());
+    	}
+    }
+    return pathsSet;
+  }
+
+  protected Set<String> collectAllComments(List<GitChangeSet> gitChangeSetList) {
+  	Set<String> comments = new HashSet<String>();
+    for (GitChangeSet gitChangeSet : gitChangeSetList) {
+    	comments.add(gitChangeSet.getComment());
+    }
+    return comments;
+  }
 }
